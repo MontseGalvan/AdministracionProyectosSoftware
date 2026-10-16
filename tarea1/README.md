@@ -129,6 +129,76 @@ lo que permitió que la alternativa MariaDB pudiera crearse legalmente, hoy much
 
 ---
 
+## Ejercicio 3. De PostgreSQL 17 a 18
+ 
+### 1. Tabla de diferencias entre los dos contenedores
+
+| Qué comparar | PostgreSQL 17 | PostgreSQL 18 | Por qué cambió |
+|---|---|---|---|
+| **Nombre del archivo** | `docker-compose.yml` | `compose.yaml` | compose.yaml es el nombre que recomienda la Compose Specification, docker-compose.yml es el nombre antiguo, de cuando Compose era un programa aparte. |
+| **Primera línea** | `version: '3.8'` | No hay | Compose V2 ignora la clave `version:` y avisa que es obsoleta (ya no hace falta). |
+| **Imagen** | `postgres:17` | `FROM postgres:18.6` | Se actualiza a PostgreSQL 18 y se fija la versión completa (18.6). |
+| **Datos** | `./data:/var/lib/postgresql/data` | `datos_db:/var/lib/postgresql` | PostgreSQL 18 cambió el punto de montaje de los datos, además se pasa de un *bind mount* a un volumen con nombre, más portable y administrado por Docker. |
+| **Contraseña** | escrita: `postgres` | `${POSTGRES_PASSWORD:-...}` | Se saca la contraseña del archivo que se versiona y se maneja con un `.env` y un valor por defecto. |
+| **Puerto** | `"5432:5432"` | `"127.0.0.1:5434:5432"` | Ahora solo se publica en localhost (es más seguro) y en el 5434, para no chocar con un PostgreSQL ya instalado en el 5432. |
+| **¿Sabe si está lista?** | No | `healthcheck` | Docker comprueba con `pg_isready` que la base responde, no solo que el contenedor existe. |
+| **Interfaz web** | No | Adminer | Se agrega Adminer para ver y consultar la base desde el navegador. |
+| **La carpeta del proyecto, dentro** | No, sólo `data/` | `./:/trabajo` | Monta el proyecto dentro del contenedor para poder trabajar en él y correr los scripts de `extras/`. | 
+
+### 2. ¿Se usaba el Dockerfile viejo?
+ 
+No, en el `docker-compose.yml` de PostgreSQL 17 el servicio se define con `image: postgres:17` y no aparece la clave `build:`, lo que significa que Compose descargaba directamente la imagen oficial `postgres:17` desde el registro y nunca construía nada a partir del Dockerfile. El Dockerfile de la carpeta `1-postgres17/` quedaba ignorado, en cambio, el nuevo `compose.yaml` sí incluye `build: .`, por lo que ahora la imagen sí se construye a partir del Dockerfile (Docker Inc., s.f.).
+ 
+### 3. Versionado semántico y por qué pasar de la 17 a la 18 es un cambio mayor
+ 
+El versionado semántico (*SemVer*) es una convención para numerar versiones con el formato MAYOR.MENOR.PARCHE, donde cada número se incrementa según el tipo de cambio (Preston-Werner, s.f.):
+ 
+- **MAYOR:** cambios incompatibles con versiones anteriores.
+- **MENOR:** se añade funcionalidad de forma compatible hacia atrás.
+- **PARCHE:** correcciones de errores compatibles hacia atrás.
+  
+Pasar de PostgreSQL 17 a 18 es un cambio mayor porque sube el primer número de la versión e introduce cambios que rompen la compatibilidad, el mayor ejemplo en esta tarea es que PostgreSQL 18 cambió el punto de montaje de los datos (de `/var/lib/postgresql/data` a `/var/lib/postgresql`), de modo que un contenedor configurado para la 17 ya no arranca tal cual en la 18. Por eso el `!` del mensaje de confirmación (`build!: actualiza el contenedor a PostgreSQL 18`) señala un cambio que rompe la compatibilidad (Preston-Werner, s.f.; Docker Inc., s.f.).
+ 
+> **Fuentes:** Docker Inc. (s.f.); Preston-Werner (s.f.).
+
+---
+
+## Ejercicio 4. Otro stack: MySQL + phpMyAdmin
+ 
+### 1. Tabla comparativa: PostgreSQL + Adminer frente a MySQL + phpMyAdmin
+ 
+| Aspecto | PostgreSQL + Adminer | MySQL + phpMyAdmin |
+|---|---|---|
+| **Motor de base de datos** | PostgreSQL 18.6 | MySQL 9.7.2 |
+| **Imagen web** | `adminer:5.5.1` | `phpmyadmin:5.2.3` |
+| **Contraseña del administrador** | `POSTGRES_PASSWORD` | `MYSQL_ROOT_PASSWORD` |
+| **Variable de la base** | `POSTGRES_DB` | `MYSQL_DATABASE` |
+| **Usuario** | `POSTGRES_USER` | `MYSQL_USER` |
+| **Contraseña del usuario** | `POSTGRES_PASSWORD` | `MYSQL_PASSWORD` |
+| **Puerto interno de la base** | `5432` | `3306` |
+| **Puerto en la máquina** | `5434` | `3307` |
+| **Carpeta de datos** | `/var/lib/postgresql` | `/var/lib/mysql` |
+| **Puerto web interno** | `8080` | `80` |
+| **Puerto web en la máquina** | `8080` | `8081` |
+| **Se conecta a la base mediante** | `ADMINER_DEFAULT_SERVER: db` | `PMA_HOST: db` |
+| **¿Necesita Dockerfile?** | Sí, para añadir nano, less y la zona horaria | No, la imagen oficial ya trae todo |
+ 
+Aunque son motores distintos, el patrón del `compose.yaml` es el mismo con una base de datos con su volumen, su `healthcheck` y su puerto publicado solo en `localhost`, más una
+interfaz web que depende de que la base esté *healthy* antes de arrancar (Docker Inc., s.f.).
+ 
+### 2. Versión LTS frente a *innovation*, y por qué `mysql:9.7.2` y no `mysql:latest`
+ 
+MySQL publica sus versiones en las siguientes vías:
+ 
+- **LTS (Long-Term Support):** recibe correcciones de errores y de seguridad durante varios años, y está pensada para entornos estables y de producción, donde importa que el
+  comportamiento no cambie de un día para otro.
+- ***Innovation*:** trae las funciones más nuevas, pero con soporte corto. Cada versión *innovation* se mantiene solo hasta que sale la siguiente, por lo que obliga a actualizar
+  muy seguido.
+
+En la tarea se usa `mysql:9.7.2`, que es una versión LTS, y no `mysql:latest` por dos razones: primero `latest` no es una versión estable, es la última que se subió y cambia sin aviso, por lo que el entorno podría dejar de ser reproducible. En segundo lugar, fijar la versión completa garantiza reproducibilidad al permitir que todos los que levanten el contendor obtengan el mismo MySQL con soporte a largo plazo.
+
+---
+
 ## Referencias
 
 Chacon, S., & Straub, B. (2014). *Pro Git* (2.ª ed.). Apress. https://git-scm.com/book/es/v2
@@ -150,7 +220,7 @@ Project Management Institute. (2021). *A guide to the project management body of
 Schwaber, K., & Sutherland, J. (2020). *La guía de Scrum*. https://scrumguides.org
 
 Sommerville, I. (2004). *Ingeniería de software* (7.ª ed.). Addison Wesley.
-
+ 
 ---
 
 ## Auditoría de Inteligencia Artificial
