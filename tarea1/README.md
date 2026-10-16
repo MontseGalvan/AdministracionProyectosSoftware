@@ -156,9 +156,46 @@ El versionado semántico (*SemVer*) es una convención para numerar versiones co
 - **MAYOR:** cambios incompatibles con versiones anteriores.
 - **MENOR:** se añade funcionalidad de forma compatible hacia atrás.
 - **PARCHE:** correcciones de errores compatibles hacia atrás.
+  
 Pasar de PostgreSQL 17 a 18 es un cambio mayor porque sube el primer número de la versión e introduce cambios que rompen la compatibilidad, el mayor ejemplo en esta tarea es que PostgreSQL 18 cambió el punto de montaje de los datos (de `/var/lib/postgresql/data` a `/var/lib/postgresql`), de modo que un contenedor configurado para la 17 ya no arranca tal cual en la 18. Por eso el `!` del mensaje de confirmación (`build!: actualiza el contenedor a PostgreSQL 18`) señala un cambio que rompe la compatibilidad (Preston-Werner, s.f.; Docker Inc., s.f.).
  
 > **Fuentes:** Docker Inc. (s.f.); Preston-Werner (s.f.).
+
+---
+
+## Ejercicio 4. Otro stack: MySQL + phpMyAdmin
+ 
+### 1. Tabla comparativa: PostgreSQL + Adminer frente a MySQL + phpMyAdmin
+ 
+| Aspecto | PostgreSQL + Adminer | MySQL + phpMyAdmin |
+|---|---|---|
+| **Motor de base de datos** | PostgreSQL 18.6 | MySQL 9.7.2 |
+| **Imagen web** | `adminer:5.5.1` | `phpmyadmin:5.2.3` |
+| **Contraseña del administrador** | `POSTGRES_PASSWORD` | `MYSQL_ROOT_PASSWORD` |
+| **Variable de la base** | `POSTGRES_DB` | `MYSQL_DATABASE` |
+| **Usuario** | `POSTGRES_USER` | `MYSQL_USER` |
+| **Contraseña del usuario** | `POSTGRES_PASSWORD` | `MYSQL_PASSWORD` |
+| **Puerto interno de la base** | `5432` | `3306` |
+| **Puerto en la máquina** | `5434` | `3307` |
+| **Carpeta de datos** | `/var/lib/postgresql` | `/var/lib/mysql` |
+| **Puerto web interno** | `8080` | `80` |
+| **Puerto web en la máquina** | `8080` | `8081` |
+| **Se conecta a la base mediante** | `ADMINER_DEFAULT_SERVER: db` | `PMA_HOST: db` |
+| **¿Necesita Dockerfile?** | Sí, para añadir nano, less y la zona horaria | No, la imagen oficial ya trae todo |
+ 
+Aunque son motores distintos, el patrón del `compose.yaml` es el mismo con una base de datos con su volumen, su `healthcheck` y su puerto publicado solo en `localhost`, más una
+interfaz web que depende de que la base esté *healthy* antes de arrancar (Docker Inc., s.f.).
+ 
+### 2. Versión LTS frente a *innovation*, y por qué `mysql:9.7.2` y no `mysql:latest`
+ 
+MySQL publica sus versiones en las siguientes vías:
+ 
+- **LTS (Long-Term Support):** recibe correcciones de errores y de seguridad durante varios años, y está pensada para entornos estables y de producción, donde importa que el
+  comportamiento no cambie de un día para otro.
+- ***Innovation*:** trae las funciones más nuevas, pero con soporte corto. Cada versión *innovation* se mantiene solo hasta que sale la siguiente, por lo que obliga a actualizar
+  muy seguido.
+
+En la tarea se usa `mysql:9.7.2`, que es una versión LTS, y no `mysql:latest` por dos razones: primero `latest` no es una versión estable, es la última que se subió y cambia sin aviso, por lo que el entorno podría dejar de ser reproducible. En segundo lugar, fijar la versión completa garantiza reproducibilidad al permitir que todos los que levanten el contendor obtengan el mismo MySQL con soporte a largo plazo.
 
 ---
 
