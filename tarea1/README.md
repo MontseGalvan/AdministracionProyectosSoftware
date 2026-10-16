@@ -199,6 +199,50 @@ En la tarea se usa `mysql:9.7.2`, que es una versión LTS, y no `mysql:latest` p
 
 ---
 
+## Ejercicio 5. Capturas
+ 
+### PostgreSQL 17
+ 
+**1. Levantamiento con `up -d --build` y el aviso de *version*:**
+ 
+![PostgreSQL 17 levantado con docker compose up -d --build](img/01-pg17-up.png)
+ 
+**2. `docker compose ps` y `SELECT version();`:**
+ 
+![PostgreSQL 17: ps y SELECT version()](img/02-pg17-version.png)
+ 
+### PostgreSQL 18
+ 
+**3. `docker compose ps` con `(healthy)` y `SELECT version();`:**
+ 
+![PostgreSQL 18: ps con healthy y SELECT version()](img/03-pg18-version.png)
+ 
+**4. Adminer mostrando las tablas:**
+ 
+![PostgreSQL 18: Adminer con las tablas](img/04-pg18-adminer.png)
+ 
+**5. El diff de la confirmación a la 18, en GitHub:**
+ 
+![Diff del commit a PostgreSQL 18 en GitHub](img/05-pg18-diff.png)
+ 
+### MySQL + phpMyAdmin
+ 
+**6. phpMyAdmin con `SELECT VERSION();`:**
+ 
+![phpMyAdmin con SELECT VERSION() mostrando 9.7.2](img/06-phpmyadmin.png)
+ 
+### Docker e historial
+ 
+**7. Docker Desktop con los dos stacks encendidos:**
+ 
+![Docker Desktop con los dos stacks encendidos](img/07-docker-desktop.png)
+ 
+**8. El historial de confirmaciones en GitHub (17, 18 y MySQL):**
+ 
+![Historial de commits en GitHub](img/08-historial.png)
+ 
+---
+
 ## Referencias
 
 Chacon, S., & Straub, B. (2014). *Pro Git* (2.ª ed.). Apress. https://git-scm.com/book/es/v2
